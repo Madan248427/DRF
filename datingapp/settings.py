@@ -62,8 +62,11 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+ 
+    "django.middleware.common.CommonMiddleware",
     'accounts.middleware.RefreshCookieToBodyMiddleware',
 ]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 ROOT_URLCONF = "datingapp.urls"
 
@@ -90,14 +93,11 @@ WSGI_APPLICATION = "datingapp.wsgi.application"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'Mrk@0404',
-        'HOST': 'db.uwzjrgdotdwoankiynhz.supabase.co',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',  # make sure BASE_DIR is defined, typically in settings.py
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -133,11 +133,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # ✅ Add this
+STATIC_URL = "static/"
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-# DEBUG_PROPAGATE_EXCEPTIONS = True
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -146,11 +143,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL="accounts.Users"
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication', 
         'accounts.authentication.JWTAuthenticationFromCookie',
     )
 }
 # Django project settings.py
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 from datetime import timedelta
 
@@ -193,30 +191,35 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_HTTP_ONLY": True,
     "AUTH_COOKIE_SAMESITE": "Strict",
 }
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://*.ngrok-free.app ",
+    "https://drf-1-p3vn.onrender.com",# React app
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_COOKIE_SAMESITE = 'Lax'
-
-CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = False
 
-SESSION_COOKIE_SAMESITE = 'Lax'
-
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.ngrok-free.app",
-    "http://localhost:5173",
-]  
+# CSRF_TRUSTED_ORIGINS = [
+#     "https://*.ngrok-free.app",
+#     "http://localhost:5173",
+# ]  
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",
-    
- 
-# ]
-CORS_ALLOW_ALL_ORIGINS = True
-
-
+CORS_ALLOWED_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://*.ngrok-free.app ",
+    "https://drf-1-p3vn.onrender.com",
+]
+# postgresql://postgres:[YOUR-PASSWORD]@db.uwzjrgdotdwoankiynhz.supabase.co:5432/postgres
+CSRF_TRUSTED_ORIGINS = [
+ "https://drf-1-p3vn.onrender.com",
+    "http://localhost:5173",
+    "https://*.ngrok-free.app",
+]
