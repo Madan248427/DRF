@@ -137,7 +137,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # ✅ Add this
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-DEBUG_PROPAGATE_EXCEPTIONS = True
+# DEBUG_PROPAGATE_EXCEPTIONS = True
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -198,9 +198,12 @@ SIMPLE_JWT = {
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'Lax'
+
+CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
+
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 
 CSRF_TRUSTED_ORIGINS = [
     "https://*.ngrok-free.app",
