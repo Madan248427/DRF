@@ -207,10 +207,11 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = False
 
-# CSRF_TRUSTED_ORIGINS = [
-#     "https://*.ngrok-free.app",
-#     "http://localhost:5173",
-# ]  
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.app",
+    "http://localhost:5173",
+    "https://drf-1-p3vn.onrender.com",
+]  
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
