@@ -108,3 +108,117 @@ class UserProfileSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+    
+from rest_framework import serializers
+from .models import Section, TeacherSubject, Users, Attendance, StudentSubject, UserProfile
+
+# Simple Section Serializer
+class SectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Section
+        fields = ['id', 'name']
+
+# TeacherSubject Serializer with nested subject name
+class TeacherSubjectSerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
+
+    class Meta:
+        model = TeacherSubject
+        fields = ['id', 'subject_name', 'section', 'subject_time']
+
+# Student Serializer with basic fields and section info from UserProfile
+class StudentListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ['id', 'username', 'email']
+
+# Attendance Serializer for POST and GET attendance records
+# serializers.py
+from rest_framework import serializers
+from .models import Section
+
+class SectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Section
+        fields = ['id', 'name']
+
+from rest_framework import serializers
+from .models import Subject
+
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ['id', 'subject_name']
+# serializers.py
+from rest_framework import serializers
+from .models import StudentSubject
+
+class StudentSubjectSerializer(serializers.ModelSerializer):
+    student_username = serializers.CharField(source='student.username', read_only=True)
+    subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
+
+    class Meta:
+        model = StudentSubject
+        fields = ['id', 'student', 'student_username', 'subject', 'subject_name', 'custom_name']
+# serializers.py
+from rest_framework import serializers
+from .models import TeacherSubject
+
+class TeacherSubjectSerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source="subject.subject_name", read_only=True)
+    section_name = serializers.CharField(source="section.name", read_only=True)
+    teacher_name = serializers.CharField(source="teacher.username", read_only=True)
+
+    class Meta:
+        model = TeacherSubject
+        fields = ['id', 'subject', 'subject_name', 'section', 'section_name', 'teacher', 'teacher_name', 'subject_time']
+from rest_framework import serializers
+from .models import Attendance
+
+from rest_framework import serializers
+from .models import Attendance, TeacherSubject, Section
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    # For read, expand related fields; for write, accept IDs
+    student = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(Role='user'))
+    subject = serializers.PrimaryKeyRelatedField(queryset=TeacherSubject.objects.all())
+    section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all())
+    status = serializers.ChoiceField(choices=Attendance.STATUS_CHOICES)
+    date = serializers.DateField()
+
+    class Meta:
+        model = Attendance
+        fields = ['id', 'student', 'subject', 'section', 'date', 'status', 'taken_by']
+        read_only_fields = ['taken_by']
+
+    def validate(self, data):
+        user = self.context['request'].user
+
+        # Validate that the teacher is assigned to the section and subject
+        subject = data['subject']
+        section = data['section']
+        if subject.teacher != user:
+            raise serializers.ValidationError("You are not assigned to this subject.")
+        if subject.section != section:
+            raise serializers.ValidationError("Subject does not belong to the specified section.")
+
+        # Additional validation can be added here as needed
+
+        return data
+
+    def create(self, validated_data):
+        # Prevent duplicate attendance (unique_together enforced by model)
+        attendance_obj, created = Attendance.objects.update_or_create(
+            student=validated_data['student'],
+            subject=validated_data['subject'],
+            date=validated_data['date'],
+            defaults={
+                'section': validated_data['section'],
+                'status': validated_data['status'],
+                'taken_by': self.context['request'].user,
+            }
+        )
+        return attendance_obj

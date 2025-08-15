@@ -216,3 +216,97 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions
+from .models import Section
+from .serializer import SectionSerializer
+
+class SectionListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]  # require auth, adjust as needed
+
+    def get(self, request):
+        sections = Section.objects.all()
+        serializer = SectionSerializer(sections, many=True)
+        return Response(serializer.data)
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated  # Optional
+from .models import Subject
+from .serializer import SubjectSerializer
+
+class SubjectListView(APIView):
+    permission_classes = [IsAuthenticated]  # Remove this line if you want public access
+
+    def get(self, request):
+        subjects = Subject.objects.all()
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)
+
+# views.py
+from rest_framework import viewsets
+from .models import StudentSubject
+from .serializer import StudentSubjectSerializer
+
+class StudentSubjectViewSet(viewsets.ModelViewSet):
+    queryset = StudentSubject.objects.all()
+    serializer_class = StudentSubjectSerializer
+# views.py
+from rest_framework import generics, permissions
+from .models import TeacherSubject
+from .serializer import TeacherSubjectSerializer
+
+class TeacherSubjectListView(generics.ListAPIView):
+    queryset = TeacherSubject.objects.select_related('subject', 'section', 'teacher').all()
+    serializer_class = TeacherSubjectSerializer
+    permission_classes = [permissions.IsAuthenticated]  # Optional: allow only logged-in users
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from rest_framework.exceptions import PermissionDenied
+from .models import Attendance
+from .serializer import AttendanceSerializer
+
+class TeacherOnlyMixin:
+    permission_classes = [permissions.IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if request.user.Role != 'teacher':
+            raise PermissionDenied("Only teachers are allowed.")
+
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from .models import Attendance, TeacherSubject, Section
+from .serializer import AttendanceSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class AttendanceView(generics.GenericAPIView):
+    serializer_class = AttendanceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # List attendance records for sections/subjects assigned to this teacher
+        queryset = Attendance.objects.filter(
+            section__teachersubject__teacher=user
+        ).distinct()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        user = request.user
+        data = request.data
+        if not isinstance(data, list):
+            return Response({"error": "Expected a list of attendance records."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=data, many=True, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"success": "Attendance recorded successfully."}, status=status.HTTP_201_CREATED)

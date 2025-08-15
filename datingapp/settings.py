@@ -46,7 +46,9 @@ INSTALLED_APPS = [
     'accounts',
     'rest_framework_simplejwt.token_blacklist',
     "corsheaders",
-    'products',    
+    'products',  
+    # 'teacher',
+    # 'student',
     
     
 ]
